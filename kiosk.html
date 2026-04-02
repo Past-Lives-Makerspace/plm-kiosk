@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Past Lives Makerspace — Guest Sign-In</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Raleway:wght@300;400;500;600&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #121014;
+  --bg2: #1b1820;
+  --bg3: #24202c;
+  --surface: #1e1a26;
+  --gold: #c9a84c;
+  --gold-light: #e8d48b;
+  --gold-dim: #8a7434;
+  --gold-glow: rgba(201,168,76,0.15);
+  --cream: #f0e6d3;
+  --text: #e8ddd0;
+  --text2: #9a9199;
+  --text3: #5e5868;
+  --accent: #c9a84c;
+  --border: #3a3344;
+  --border-gold: rgba(201,168,76,0.3);
+}
+
+html { height: 100%; background: var(--bg); }
+body {
+  min-height: 100%; background: var(--bg);
+  color: var(--text);
+  font-family: 'Silkscreen', monospace;
+  overflow-x: hidden; overflow-y: auto;
+  cursor: default;
+  user-select: none; -webkit-user-select: none;
+}
+.field input { user-select: text; -webkit-user-select: text; }
+
+/* ── warm ambient glow ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 50% 40%, rgba(201,168,76,0.04), transparent),
+    radial-gradient(ellipse 300px 300px at 20% 80%, rgba(201,168,76,0.02), transparent),
+    radial-gradient(ellipse 300px 300px at 80% 80%, rgba(201,168,76,0.02), transparent);
+  z-index: 0; pointer-events: none;
+}
+
+/* ── card style ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(201,168,76,0.05);
+}
+
+/* ── screens ── */
+.screen {
+  display: none; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh;
+  padding: 32px 40px 60px;
+  position: relative; z-index: 1;
+}
+.screen.active { display: flex; }
+#welcome-screen { padding: 0; }
+
+/* ═══════ WELCOME ═══════ */
+.welcome-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; position: relative;
+}
+.welcome-logo {
+  max-width: 520px; width: 80%;
+  filter: drop-shadow(0 0 60px rgba(201,168,76,0.3));
+}
+.welcome-banner {
+  max-width: 440px; width: 70%;
+  filter: drop-shadow(0 0 30px rgba(201,168,76,0.2));
+  transition: all 0.3s ease;
+}
+.welcome-banner-btn {
+  margin-top: 24px;
+  background: none; border: 2px solid transparent;
+  padding: 16px 32px; cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.welcome-banner-btn:hover {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.05);
+}
+.welcome-banner-btn:hover .welcome-banner {
+  filter: drop-shadow(0 0 50px rgba(201,168,76,0.4));
+  transform: scale(1.03);
+}
+.welcome-banner-btn:active { transform: scale(0.98); }
+
+/* lantern decorations */
+.welcome-lantern {
+  position: fixed; width: 180px; opacity: 0.14;
+  filter: drop-shadow(0 0 50px rgba(201,168,76,0.4));
+  z-index: 0;
+  animation: lantern-glow 4s ease-in-out infinite alternate;
+}
+.lantern-left { bottom: -20px; left: 40px; }
+.lantern-right { bottom: -20px; right: 40px; transform: scaleX(-1); animation-delay: 2s; }
+@keyframes lantern-glow { 0% { opacity: 0.08; } 100% { opacity: 0.18; } }
+
+/* ── floating icon field ── */
+.icon-field {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.icon-row {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0;
+  will-change: transform;
+}
+.floating-icon {
+  position: absolute;
+  image-rendering: pixelated;
+  opacity: 0.45;
+}
+
+.today-badge {
+  position: fixed; bottom: 20px; right: 24px;
+  font-family: 'Raleway', sans-serif; font-size: 11px; font-weight: 500;
+  color: var(--text3); letter-spacing: 1px; z-index: 2;
+}
+
+/* ═══════ REASON ═══════ */
+.section-title {
+  font-family: 'Press Start 2P', monospace; font-size: 16px; font-weight: 400;
+  color: var(--gold); letter-spacing: 3px; text-align: center;
+  text-transform: uppercase;
+}
+.section-subtitle {
+  font-size: 13px; color: var(--text2); text-align: center;
+  line-height: 1.7; letter-spacing: 0.5px; margin-top: 4px;
+}
+
+.reason-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 20px; width: 100%; max-width: 620px; margin-top: 28px;
+}
+.reason-btn {
+  font-family: 'Press Start 2P', monospace; font-size: 11px; font-weight: 400;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 32px 20px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); cursor: pointer;
+  transition: all 0.2s; text-align: center; line-height: 1.5;
+}
+.reason-btn:hover {
+  border-color: var(--gold); color: var(--gold);
+  box-shadow: 0 0 30px rgba(201,168,76,0.12);
+}
+.reason-btn:active { transform: scale(0.98); }
+.reason-icon { font-size: 32px; display: block; margin-bottom: 14px; }
+
+/* ── form lantern ── */
+.form-lantern {
+  position: fixed; top: 30px; right: 40px; width: 70px; opacity: 0.06;
+  filter: drop-shadow(0 0 20px rgba(201,168,76,0.3));
+  z-index: 0;
+}
+
+/* ═══════ FORM ═══════ */
+.form-card {
+  width: 100%; max-width: 740px;
+  padding: 40px 48px; display: flex; flex-direction: column; gap: 20px;
+}
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label {
+  font-family: 'Silkscreen', monospace; font-size: 12px; font-weight: 400;
+  color: var(--gold); letter-spacing: 2px; text-transform: uppercase;
+}
+.field input {
+  font-family: 'Raleway', sans-serif; font-size: 16px; font-weight: 400;
+  padding: 14px 16px; background: var(--bg);
+  border: 1px solid var(--border); color: var(--text); outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s; letter-spacing: 0.5px;
+}
+.field input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(201,168,76,0.1);
+}
+.field input::placeholder { color: var(--text3); font-size: 14px; }
+.field .optional { color: var(--text3); font-size: 9px; font-family: 'Raleway', sans-serif; text-transform: none; letter-spacing: 0; }
+
+/* ── steps ── */
+.steps { display: flex; gap: 10px; justify-content: center; margin-bottom: 14px; }
+.step-dot { width: 10px; height: 10px; border: 1px solid var(--text3); background: transparent; border-radius: 0; }
+.step-dot.active { background: var(--gold); border-color: var(--gold); }
+.step-dot.done { background: var(--gold-dim); border-color: var(--gold-dim); }
+
+/* ── buttons ── */
+.btn {
+  font-family: 'Press Start 2P', monospace; font-size: 10px; font-weight: 400;
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 16px 32px; border: 1px solid; background: transparent;
+  cursor: pointer; color: var(--text); transition: all 0.2s;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { border-color: var(--gold); color: var(--gold); }
+.btn-primary:hover { background: var(--gold); color: var(--bg); }
+.btn-secondary { border-color: var(--text3); color: var(--text2); }
+.btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+.btn-success { border-color: var(--gold); color: var(--gold); font-size: 12px; padding: 18px 48px; }
+.btn-success:hover { background: var(--gold); color: var(--bg); }
+.btn-back { border-color: var(--border); color: var(--text3); font-size: 11px; }
+.btn-back:hover { border-color: var(--text3); color: var(--text2); }
+.btn-row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+
+/* ── waiver ── */
+.waiver-scroll {
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 20px; max-height: 280px; overflow-y: auto;
+  font-size: 13px; color: var(--text2); line-height: 1.9;
+  letter-spacing: 0.3px;
+  scrollbar-width: thin; scrollbar-color: var(--gold-dim) var(--bg);
+}
+.waiver-scroll::-webkit-scrollbar { width: 6px; }
+.waiver-scroll::-webkit-scrollbar-track { background: var(--bg); }
+.waiver-scroll::-webkit-scrollbar-thumb { background: var(--gold-dim); }
+.waiver-scroll p { margin-bottom: 12px; }
+.section-num { color: var(--gold); font-family: 'Silkscreen', monospace; font-weight: 700; }
+
+/* ── checkboxes ── */
+.check-row { display: flex; align-items: center; gap: 14px; cursor: pointer; padding: 10px 0; }
+.check-box {
+  width: 22px; height: 22px; border: 1px solid var(--border);
+  background: var(--bg); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.check-box.checked { background: var(--gold); border-color: var(--gold); }
+.check-box.checked::after { content: ''; width: 8px; height: 8px; background: var(--bg); }
+.check-label { font-family: 'Silkscreen', monospace; font-size: 13px; color: var(--text); letter-spacing: 0.3px; }
+
+/* ── minor ── */
+.minor-section {
+  display: none; padding: 18px; margin-top: 6px;
+  border: 1px dashed var(--gold-dim); background: rgba(201,168,76,0.03);
+}
+.minor-section.visible { display: block; }
+
+.guardian-notice {
+  padding: 16px; margin-top: 4px;
+  border: 1px solid var(--gold-dim); background: rgba(201,168,76,0.05);
+}
+
+/* ═══════ THANK YOU ═══════ */
+#thankyou-screen { gap: 20px; text-align: center; justify-content: center; height: 100vh; }
+.thankyou-lantern {
+  width: 100px;
+  filter: drop-shadow(0 0 40px rgba(201,168,76,0.3));
+  animation: lantern-glow 2s ease-in-out infinite alternate;
+}
+.thankyou-title {
+  font-family: 'Press Start 2P', monospace; font-size: 22px; font-weight: 400;
+  color: var(--gold); letter-spacing: 4px; text-transform: uppercase;
+  text-shadow: 0 0 40px rgba(201,168,76,0.2);
+}
+.thankyou-msg { font-size: 16px; color: var(--text2); line-height: 1.9; letter-spacing: 0.5px; }
+.thankyou-countdown { font-size: 12px; color: var(--text3); letter-spacing: 1px; }
+
+/* ── golden sparkles ── */
+.sparkle {
+  position: fixed; pointer-events: none; z-index: 100;
+  background: var(--gold);
+  animation: sparkle-fade 1s ease-out forwards;
+}
+@keyframes sparkle-fade {
+  0% { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(0) translateY(-40px); }
+}
+
+/* ── progress ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--gold-light));
+  z-index: 50; transition: width 0.4s ease;
+}
+
+/* ── divider ── */
+.gold-rule {
+  width: 60px; height: 1px; background: var(--gold-dim); margin: 8px auto;
+}
+
+.field-error { border-color: #c05050 !important; animation: shake 0.3s ease; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress-bar" style="width:0%"></div>
+<div class="icon-field" id="icon-field"></div>
+
+<!-- ═══════ WELCOME ═══════ -->
+<div class="screen active" id="welcome-screen">
+  <div class="welcome-wrap">
+    <img src="/static/branding/logo-cropped.png" class="welcome-logo" alt="Past Lives Makerspace">
+    <button class="welcome-banner-btn" onclick="goTo('reason')">
+      <img src="/static/branding/banner-cropped.png" class="welcome-banner" alt="Please sign in as a guest">
+    </button>
+  </div>
+</div>
+
+<!-- ═══════ REASON ═══════ -->
+<div class="screen" id="reason-screen">
+  <img src="/static/branding/lantern-cropped.png" class="form-lantern">
+  <div class="section-title">What Brings You In?</div>
+  <div class="gold-rule"></div>
+  <div class="reason-grid">
+    <div class="reason-btn" onclick="setReason('tour')">
+      <span class="reason-icon">&#x1F50D;</span>Touring
+    </div>
+    <div class="reason-btn" onclick="setReason('class')">
+      <span class="reason-icon">&#x1F3A8;</span>Taking a Class
+    </div>
+    <div class="reason-btn" onclick="setReason('guest')">
+      <span class="reason-icon">&#x1F44B;</span>Guest of Member
+    </div>
+    <div class="reason-btn" onclick="setReason('event')">
+      <span class="reason-icon">&#x2B50;</span>Event
+    </div>
+    <div class="reason-btn" onclick="setReason('meeting')" style="grid-column: 1 / -1;">
+      <span class="reason-icon">&#x1F4CB;</span>Meeting
+    </div>
+  </div>
+  <div class="btn-row" style="margin-top:24px">
+    <button class="btn btn-back" onclick="goTo('welcome')">Back</button>
+  </div>
+</div>
+
+<!-- ═══════ INFO ═══════ -->
+<div class="screen" id="info-screen">
+  <img src="/static/branding/lantern-cropped.png" class="form-lantern">
+  <div class="steps" id="steps-info"></div>
+  <div class="form-card card">
+    <div class="section-title" style="font-size:13px">Your Information</div>
+    <div class="gold-rule"></div>
+    <div class="field">
+      <label>Name <span class="optional">*</span></label>
+      <input type="text" id="f-name" name="xk_n" placeholder="First and last name" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">
+    </div>
+    <div class="field">
+      <label>Email <span class="optional">*</span></label>
+      <input type="text" id="f-email" name="xk_e" placeholder="you@example.com" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">
+    </div>
+    <div class="field">
+      <label>Phone <span class="optional">(optional)</span></label>
+      <input type="text" id="f-phone" name="xk_p" placeholder="(503) 555-1234" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">
+    </div>
+    <div class="field" id="guest-of-field" style="display:none">
+      <label>Guest of</label>
+      <input type="text" id="f-guest-of" placeholder="Member name" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">
+    </div>
+    <div class="check-row" onclick="toggleCheck(this); toggleMinor()">
+      <div class="check-box" id="chk-minor"></div>
+      <div class="check-label">I am under 18 <span id="minor-note" style="display:none;color:var(--gold);font-size:11px;margin-left:8px">— Parent/Guardian required to fill out waivers</span></div>
+    </div>
+    <div class="minor-section" id="minor-section">
+      <div class="field" style="margin-bottom:12px">
+        <label>Parent / Guardian Name</label>
+        <input type="text" id="f-guardian-name" placeholder="Guardian full name" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">
+      </div>
+      <div class="field">
+        <label>Guardian Contact</label>
+        <input type="text" id="f-guardian-contact" placeholder="Phone or email" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo('reason')">Back</button>
+      <button class="btn btn-primary" onclick="goToWaiver()">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ GUEST WAIVER ═══════ -->
+<div class="screen" id="waiver-screen">
+  <img src="/static/branding/lantern-cropped.png" class="form-lantern">
+  <div class="steps" id="steps-waiver"></div>
+  <div class="form-card card">
+    <div class="section-title" style="font-size:13px">Guest Release</div>
+    <div class="gold-rule"></div>
+    <div class="waiver-scroll">
+      <p>In consideration for Guest's presence and possible participation in the activities of PAST LIVES MAKERSPACE, Guest agrees to the following waiver and release in perpetuity:</p>
+      <p><span class="section-num">1. Assumption of Risk.</span> Guest acknowledges the inherent risks in the use of tools, equipment, devices, and hazardous materials of any kind commonly used in electronics construction, fabrication, woodcraft and other technology and tool related activities and that Guest's participation in such activities and/or use of such tools may result in injury, illness, death or damage to Guest or Guest's personal property. Further, such risks and dangers may be caused by Guests or Members. Finally, such injury, illness, death, or damage to Guest or Guest's personal property may arise from foreseeable or unforeseeable causes, including, without limitation, electrocution, burns, impalement, slice, or slip and fall injuries. Guest hereby fully assumes all such risks and any others that arise because of Guest's association with PAST LIVES MAKERSPACE.</p>
+      <p><span class="section-num">2. Release of Liability.</span> Guest releases PAST LIVES MAKERSPACE, its officers, contractors and agents, and assigns from any liability whatsoever arising out of any damage, loss or injury to Guest or Guest's property while participating in any activity on the premises of PAST LIVES MAKERSPACE and/or using any equipment owned by PAST LIVES MAKERSPACE or another Guest or Member regardless of whether such loss or injury is as a result of negligence of PAST LIVES MAKERSPACE or its Guests, members, agents and assigns, or is a result of some other cause.</p>
+      <p><span class="section-num">3. Covenant Not to Sue.</span> Guest agrees that Guest will not, under any circumstances, initiate any legal action against PAST LIVES MAKERSPACE, its Guests, members, agents and assigns, nor will Guest assist in the prosecution of any such legal action filed by another, arising out of an injury to the person or property of Guest. This covenant includes the heirs, executors, administrators, or assigns of Guest.</p>
+      <p><span class="section-num">4. Third Party Indemnification.</span> Guest indemnifies, saves and holds harmless PAST LIVES MAKERSPACE, its Guests, agents and assigns from any and all losses, claims, actions or proceedings of every kind and character which may be initiated by any other persons or organizations and which arise directly or indirectly from the actions of Guest while engaged in activities at PAST LIVES MAKERSPACE.</p>
+      <p><span class="section-num">5. Age.</span> PAST LIVES MAKERSPACE is open to anyone 18+. Youth 16–17 must have a legal guardian sign the liability waiver. Youth 11–15 may attend classes or be approved for limited membership with guardian supervision. Youth under 11 require prior approval and Guild Lead approval.</p>
+      <p>I understand that I am personally responsible for my safety and actions. I will follow all safety instructions and signage. I am responsible for monitoring and labeling anything I bring, and PAST LIVES MAKERSPACE is not responsible for any lost, damaged, or stolen property.</p>
+    </div>
+    <div id="waiver-guardian-notice" class="guardian-notice" style="display:none">
+      <p style="color:var(--gold);font-family:'Silkscreen',monospace;font-size:12px;margin-bottom:8px">PARENT / GUARDIAN:</p>
+      <p style="color:var(--text2);font-size:12px;line-height:1.7">As the parent or legal guardian of the minor named above, I have read the Guest Release Form and agree to its terms on behalf of my child. I accept full responsibility for my child's safety and conduct while at Past Lives Makerspace.</p>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <div class="check-box" id="waiver-agree"></div>
+      <div class="check-label" id="waiver-agree-label">I have read and agree to the Guest Release</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo('info')">Back</button>
+      <button class="btn btn-primary" onclick="goAfterWaiver()">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ WORKSHOP WAIVER ═══════ -->
+<div class="screen" id="workshop-screen">
+  <img src="/static/branding/lantern-cropped.png" class="form-lantern">
+  <div class="steps" id="steps-workshop"></div>
+  <div class="form-card card">
+    <div class="section-title" style="font-size:13px">Workshop Waiver</div>
+    <div class="gold-rule"></div>
+    <div class="waiver-scroll">
+      <p>This agreement is between PAST LIVES MAKERSPACE and the Attendee. In consideration of Attendee's presence and participation, Attendee agrees to the following waiver and release in perpetuity:</p>
+      <p><span class="section-num">1. Assumption of Risk.</span> I acknowledge the inherent risks in the use of tools, equipment, devices, and hazardous materials commonly used in fabrication, woodcraft, various arts and other tool related activities, and that my participation may result in injury, illness, death or damage to me or my personal property. Such risks may be caused by me, members, instructors or other Attendees and may arise from foreseeable or unforeseeable causes. I fully assume all such risks arising from my participation in a workshop/class at PAST LIVES MAKERSPACE.</p>
+      <p><span class="section-num">2. Release of Liability.</span> I release PAST LIVES MAKERSPACE, its officers, instructors, contractors, agents, and assigns from any liability arising out of any damage, loss or injury to me or my property while participating in any activity at PAST LIVES MAKERSPACE regardless of cause.</p>
+      <p><span class="section-num">3. Covenant Not to Sue.</span> I will not initiate any legal action against PAST LIVES MAKERSPACE, its Attendees, members, instructors, agents and assigns arising from injury to me or my property. This covenant extends to my heirs, executors, administrators and assigns.</p>
+      <p><span class="section-num">4. Third Party Indemnification.</span> I indemnify and hold harmless PAST LIVES MAKERSPACE from any losses, claims, or proceedings arising from my actions while engaged in activities at PAST LIVES MAKERSPACE. I have carefully read these provisions, fully understand them, and voluntarily agree as a condition of participation.</p>
+    </div>
+    <div id="workshop-guardian-notice" class="guardian-notice" style="display:none">
+      <p style="color:var(--gold);font-family:'Silkscreen',monospace;font-size:12px;margin-bottom:8px">PARENT / GUARDIAN:</p>
+      <p style="color:var(--text2);font-size:12px;line-height:1.7">As the parent or legal guardian of the minor named above, I have read the Workshop Waiver and agree to its terms on behalf of my child.</p>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <div class="check-box" id="workshop-agree"></div>
+      <div class="check-label" id="workshop-agree-label">I have read and agree to the Workshop Waiver</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goTo('waiver')">Back</button>
+      <button class="btn btn-primary" onclick="goAfterWorkshop()">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODEL RELEASE ═══════ -->
+<div class="screen" id="model-release-screen">
+  <img src="/static/branding/lantern-cropped.png" class="form-lantern">
+  <div class="steps" id="steps-model"></div>
+  <div class="form-card card">
+    <div class="section-title" style="font-size:13px">Model Release</div>
+    <div class="gold-rule"></div>
+    <div class="section-subtitle">We sometimes photograph and film at the Makerspace.<br>This is completely optional.</div>
+    <div class="waiver-scroll">
+      <p>I hereby grant Past Lives Makerspace, its representatives, and affiliated entities the irrevocable right and permission to capture, use, reproduce, and publish photographs, video, or other media of me taken during my presence at the Makerspace or at any related events.</p>
+      <p>This media may be used in promotional materials, publications, social media, educational content, or any other lawful purpose, in print or digital formats.</p>
+      <p>I understand that I will not receive compensation for the use of these images or recordings and waive any right to inspect or approve the final media.</p>
+      <p>I release and discharge Past Lives Makerspace from all claims and liability arising out of or in connection with the use of such media, including any claims for libel, defamation, or invasion of privacy.</p>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <div class="check-box" id="model-agree"></div>
+      <div class="check-label">I consent to the Model Release</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="goBackFromModel()">Back</button>
+      <button class="btn btn-secondary" onclick="goTo('interests')">Skip</button>
+      <button class="btn btn-primary" onclick="goTo('interests')">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ INTERESTS ═══════ -->
+<div class="screen" id="interests-screen">
+  <img src="/static/branding/lantern-cropped.png" class="form-lantern">
+  <div class="steps" id="steps-interests"></div>
+  <div class="form-card card">
+    <div class="section-title" style="font-size:13px">One Last Thing</div>
+    <div class="gold-rule"></div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <div class="check-box" id="chk-membership"></div>
+      <div class="check-label">I'm interested in becoming a member</div>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <div class="check-box" id="chk-newsletter"></div>
+      <div class="check-label">Sign me up for the newsletter</div>
+    </div>
+    <div class="check-row" onclick="toggleCheck(this)">
+      <div class="check-box" id="chk-calendar"></div>
+      <div class="check-label">Add me to the public calendar</div>
+    </div>
+    <div class="btn-row" style="margin-top: 20px;">
+      <button class="btn btn-back" onclick="goBackFromInterests()">Back</button>
+      <button class="btn btn-success" onclick="submitForm()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ THANK YOU ═══════ -->
+<div class="screen" id="thankyou-screen">
+  <img src="/static/branding/lantern-cropped.png" class="thankyou-lantern">
+  <div class="thankyou-title">Welcome In</div>
+  <div class="gold-rule" style="width:80px;margin:4px auto"></div>
+  <div class="thankyou-msg">Thank you for signing in.<br>Enjoy your visit to Past Lives.</div>
+  <div class="thankyou-countdown" id="countdown-text">Resetting in 3...</div>
+</div>
+
+<div class="today-badge" id="today-count"></div>
+
+<script>
+let currentScreen = 'welcome';
+let visitReason = '';
+let resetTimer = null;
+
+const progressMap = {
+  welcome:0, reason:10, info:25, waiver:45, workshop:60,
+  'model-release':75, interests:90, thankyou:100
+};
+
+function setReason(reason) {
+  visitReason = reason;
+  document.getElementById('guest-of-field').style.display = reason === 'guest' ? 'flex' : 'none';
+  goTo('info');
+}
+
+function getStepCount() { return visitReason === 'meeting' ? 2 : visitReason === 'class' ? 5 : 4; }
+
+function renderSteps(id, active) {
+  const el = document.getElementById(id);
+  const n = getStepCount();
+  el.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i < active ? ' done' : '') + (i === active ? ' active' : '');
+    el.appendChild(d);
+  }
+}
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id + '-screen').classList.add('active');
+  document.getElementById('progress-bar').style.width = (progressMap[id]||0) + '%';
+  currentScreen = id;
+  window.scrollTo(0,0);
+  const cls = visitReason === 'class';
+  if (id === 'info') { renderSteps('steps-info', 0); setTimeout(() => document.getElementById('f-name').focus(), 100); }
+  if (id === 'waiver') renderSteps('steps-waiver', 1);
+  if (id === 'workshop') renderSteps('steps-workshop', 2);
+  if (id === 'model-release') renderSteps('steps-model', cls ? 3 : 2);
+  if (id === 'interests') renderSteps('steps-interests', visitReason === 'meeting' ? 1 : cls ? 4 : 3);
+}
+
+function validateInfo() {
+  const name = document.getElementById('f-name');
+  if (!name.value.trim()) { name.classList.add('field-error'); name.focus(); setTimeout(() => name.classList.remove('field-error'), 600); return false; }
+  const email = document.getElementById('f-email');
+  if (!email.value.trim()) { email.classList.add('field-error'); email.focus(); setTimeout(() => email.classList.remove('field-error'), 600); return false; }
+  return true;
+}
+
+function goToWaiver() {
+  if (!validateInfo()) return;
+  if (visitReason === 'meeting') { goTo('interests'); return; }
+  goTo('waiver');
+}
+
+function goAfterWaiver() {
+  if (!document.getElementById('waiver-agree').classList.contains('checked')) { flashCheck('waiver-agree'); return; }
+  goTo(visitReason === 'class' ? 'workshop' : 'model-release');
+}
+
+function goAfterWorkshop() {
+  if (!document.getElementById('workshop-agree').classList.contains('checked')) { flashCheck('workshop-agree'); return; }
+  goTo('model-release');
+}
+
+function goBackFromModel() { goTo(visitReason === 'class' ? 'workshop' : 'waiver'); }
+function goBackFromInterests() { goTo(visitReason === 'meeting' ? 'info' : 'model-release'); }
+
+function flashCheck(id) {
+  const row = document.getElementById(id).parentElement;
+  row.style.color = '#c05050'; setTimeout(() => row.style.color = '', 800);
+}
+
+function toggleCheck(row) { row.querySelector('.check-box').classList.toggle('checked'); }
+function toggleMinor() {
+  const isMinor = document.getElementById('chk-minor').classList.contains('checked');
+  document.getElementById('minor-section').classList.toggle('visible', isMinor);
+  document.getElementById('minor-note').style.display = isMinor ? 'inline' : 'none';
+  // update waiver labels for guardian
+  document.getElementById('waiver-guardian-notice').style.display = isMinor ? 'block' : 'none';
+  document.getElementById('workshop-guardian-notice').style.display = isMinor ? 'block' : 'none';
+  document.getElementById('waiver-agree-label').textContent = isMinor
+    ? 'As parent/guardian, I agree to the Guest Release on behalf of my child'
+    : 'I have read and agree to the Guest Release';
+  document.getElementById('workshop-agree-label').textContent = isMinor
+    ? 'As parent/guardian, I agree to the Workshop Waiver on behalf of my child'
+    : 'I have read and agree to the Workshop Waiver';
+}
+
+async function submitForm() {
+  const data = {
+    name: document.getElementById('f-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    guest_of: document.getElementById('f-guest-of').value.trim(),
+    visit_reason: visitReason,
+    is_minor: document.getElementById('chk-minor').classList.contains('checked'),
+    guardian_name: document.getElementById('f-guardian-name').value.trim(),
+    guardian_contact: document.getElementById('f-guardian-contact').value.trim(),
+    waiver_signed: document.getElementById('waiver-agree').classList.contains('checked'),
+    workshop_waiver_signed: document.getElementById('workshop-agree').classList.contains('checked'),
+    model_release_signed: document.getElementById('model-agree').classList.contains('checked'),
+    interested_in_membership: document.getElementById('chk-membership').classList.contains('checked'),
+    join_newsletter: document.getElementById('chk-newsletter').classList.contains('checked'),
+    join_calendar: document.getElementById('chk-calendar').classList.contains('checked'),
+  };
+  try { await fetch('/api/signin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) }); } catch(e) {}
+  goTo('thankyou'); spawnSparkles(); loadTodayCount();
+  let sec = 3;
+  const ct = document.getElementById('countdown-text');
+  resetTimer = setInterval(() => { sec--; ct.textContent = sec > 0 ? `Resetting in ${sec}...` : ''; if (sec <= 0) { clearInterval(resetTimer); resetKiosk(); } }, 1000);
+}
+
+function resetKiosk() {
+  if (resetTimer) clearInterval(resetTimer);
+  visitReason = '';
+  ['f-name','f-email','f-phone','f-guest-of','f-guardian-name','f-guardian-contact'].forEach(id => document.getElementById(id).value = '');
+  ['waiver-agree','model-agree','workshop-agree','chk-membership','chk-newsletter','chk-calendar','chk-minor'].forEach(id => document.getElementById(id).classList.remove('checked'));
+  document.getElementById('minor-section').classList.remove('visible');
+  document.getElementById('minor-note').style.display = 'none';
+  document.getElementById('guest-of-field').style.display = 'none';
+  document.getElementById('waiver-guardian-notice').style.display = 'none';
+  document.getElementById('workshop-guardian-notice').style.display = 'none';
+  document.getElementById('waiver-agree-label').textContent = 'I have read and agree to the Guest Release';
+  document.getElementById('workshop-agree-label').textContent = 'I have read and agree to the Workshop Waiver';
+  goTo('welcome');
+}
+
+function spawnSparkles() {
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      s.style.left = (Math.random()*100)+'vw'; s.style.top = (Math.random()*100)+'vh';
+      s.style.width = s.style.height = (2+Math.random()*4)+'px';
+      s.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 1000);
+    }, i*40);
+  }
+}
+
+async function loadTodayCount() {
+  try {
+    const r = await fetch('/api/guests');
+    const g = await r.json();
+    const today = new Date().toISOString().slice(0,10);
+    const c = g.filter(x => x.signed_in_at.startsWith(today)).length;
+    document.getElementById('today-count').textContent = c > 0 ? `${c} guest${c>1?'s':''} today` : '';
+  } catch(e) {}
+}
+
+// ── floating icon field ──
+// Each row is an independent horizontal belt of icons that drifts upward.
+// When a row exits the top, it repositions below the bottom and gets
+// new icons. Rows are staggered so one is always entering as another leaves.
+// No snapping visible — rows recycle entirely offscreen.
+(function() {
+  const icons = [
+    'plane','hammer','pliers','sewing-machine',
+    'saw','goggles','diamond','anvil',
+    'needle-nose','microphone','scissors','stained-glass',
+    'ring','computer',
+    'sledgehammer','torch','paintbrush','guitar','carrot',
+    'cabbage','chicken','leather-jacket','lathe','milling-machine',
+    'chisel','drill','saw-blade','caliper','thread-spool','thimble',
+    'welding-helmet','gear','circuit-board','yarn','iron','spray-can',
+    'motor','sprout','leather-journal',
+    'knife','screwdriver','hen'
+  ];
+  function shuffleArray(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  const field = document.getElementById('icon-field');
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  const size = 96;        // display size (icons are 180x180 with built-in centering)
+  const gapX = 160;       // spacing between icon centers in a row
+  const rowHeight = 150;  // vertical spacing between rows
+  const speed = 1.5;      // pixels per frame (~90px/sec at 60fps)
+  const stagger = 80;     // horizontal offset for alternating rows
+
+  const iconsPerRow = Math.ceil(W / gapX) + 2;
+  // Enough rows to fill screen + 2 buffer rows (one above, one below)
+  const totalRows = Math.ceil(H / rowHeight) + 3;
+
+  // Simple history: track the last 3 rows. An icon that appeared in any
+  // of them is banned. With 42 icons and ~14 per row with no same-row
+  // repeats, 3 rows uses ~42 unique icons — right at the limit.
+  // So we use 2-row history but enforce no same-row repeats strictly.
+  const history = []; // array of Sets, most recent first
+
+  function fillRow(rowDiv, rowIndex) {
+    rowDiv.innerHTML = '';
+    const offset = (rowIndex % 2) * stagger;
+
+    // Banned = everything in last 2 rows
+    const banned = new Set();
+    for (const prev of history) {
+      for (const i of prev) banned.add(i);
+    }
+
+    // Build row from a shuffled copy, guaranteeing no repeats in row
+    const pool = shuffleArray(icons.filter(i => !banned.has(i)));
+    const rowIcons = [];
+
+    for (let c = 0; c < iconsPerRow; c++) {
+      // Pick from pool (already filtered and shuffled)
+      if (pool.length > 0) {
+        rowIcons.push(pool.pop());
+      } else {
+        // Pool exhausted — pick from full list avoiding neighbor only
+        const fallback = shuffleArray(icons).find(i => i !== rowIcons[c - 1] && !rowIcons.includes(i))
+          || icons[Math.floor(Math.random() * icons.length)];
+        rowIcons.push(fallback);
+      }
+    }
+
+    // Update history
+    history.unshift(new Set(rowIcons));
+    if (history.length > 2) history.pop();
+
+    for (let c = 0; c < iconsPerRow; c++) {
+      const img = document.createElement('img');
+      const icon = rowIcons[c];
+      img.src = `/static/icons/${icon}.png`;
+      img.className = 'floating-icon';
+      img.style.width = size + 'px';
+      img.style.left = (-gapX + offset + c * gapX - size / 2) + 'px';
+      img.style.top = -size / 2 + 'px';
+      rowDiv.appendChild(img);
+    }
+  }
+
+  // Create all rows, spread evenly from above screen to below
+  const rows = [];
+  for (let i = 0; i < totalRows; i++) {
+    const row = document.createElement('div');
+    row.className = 'icon-row';
+    row.y = -rowHeight + i * rowHeight; // start position
+    row.style.transform = `translateY(${row.y}px)`;
+    row.rowIndex = i;
+    fillRow(row, i);
+    field.appendChild(row);
+    rows.push(row);
+  }
+
+  let rowCounter = totalRows;
+
+  function tick() {
+    // Find the current lowest row
+    let maxY = -Infinity;
+    for (const row of rows) {
+      if (row.y > maxY) maxY = row.y;
+    }
+
+    for (const row of rows) {
+      row.y -= speed;
+
+      // Row has fully exited top of screen — recycle just below the lowest row
+      if (row.y < -(rowHeight + size)) {
+        row.y = maxY + rowHeight;
+        row.rowIndex = rowCounter++;
+        fillRow(row, row.rowIndex);
+      }
+
+      row.style.transform = `translateY(${Math.round(row.y)}px)`;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  // block F-keys, Ctrl combos, Alt combos, Escape, Win key
+  if (e.key.startsWith('F') && e.key.length <= 3) e.preventDefault();
+  if (e.ctrlKey || e.altKey || e.metaKey) e.preventDefault();
+  if (e.key === 'Escape') e.preventDefault();
+});
+// block drag
+document.addEventListener('dragstart', e => e.preventDefault());
+window.addEventListener('DOMContentLoaded', () => {
+  loadTodayCount();
+  setInterval(async () => {
+    try {
+      const r = await fetch('/api/check-refresh');
+      const d = await r.json();
+      if (d.refresh) window.location.href = '/?r=' + Date.now();
+    } catch(e) {}
+  }, 2000);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# Data files (generated at runtime)
+kiosk.db
+kiosk.db-wal
+kiosk.db-shm
+guest_log.csv
+
+# Secrets
+service-account.json
+
+# Python
+__pycache__/
+*.pyc
+.DS_Store
