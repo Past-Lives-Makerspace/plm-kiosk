@@ -691,7 +691,7 @@ async function loadTodayCount() {
   const size = 96;        // display size (icons are 180x180 with built-in centering)
   const gapX = 160;       // spacing between icon centers in a row
   const rowHeight = 150;  // vertical spacing between rows
-  const speed = 0.735;    // pixels per frame (~44px/sec at 60fps)
+  const speed = 0.3;      // pixels per frame (~18px/sec at 60fps)
   const stagger = 80;     // horizontal offset for alternating rows
 
   const iconsPerRow = Math.ceil(W / gapX) + 2;
